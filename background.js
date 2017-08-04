@@ -5,7 +5,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
   //   code: 'document.body.style.backgroundColor="red"'
   // });
   	chrome.tabs.executeScript(tab.ib, {
-		file: 'popup.js'
+		file: 'slider.js'
 	});
 
 
