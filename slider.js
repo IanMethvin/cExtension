@@ -12,11 +12,12 @@ debugger;
 
 	var parent = document.getElementsByTagName("body")[0];
 	var child = document.createElement("div");
-	child.style.cssText = 'width:100%;height:200px;background-color:black;color:white;clear:both;position:absolute;';
-	child.innerHTML = 'heeeeeeeeeeeeellllllllloooooooooooooooooo';//<div id="fb-root" style="width:100%;background-color:red">YABOOBAY</div>'
+	child.style.cssText = 'width:100%;height:24px;background-color:black;color:white;font-size:1.3em;padding-top:2px;clear:both;position:fixed;top:0;z-index:2147483647;';
+	child.innerHTML = '<marquee>heeeeeeeeeeeeellllllllloooooooooooooooooo</marquee>';//<div id="fb-root" style="width:100%;background-color:red">YABOOBAY</div>'
 	
-	parent.children[0].style.marginTop = "200px"
-	parent.appendChild(child);
+	parent.children[0].style.marginTop = "24px"
+	// parent.appendChild(child);
+	parent.insertBefore(child, parent.children[0]);
 
 	// $('body').prepend('<div id="fb-root" style="width:100%;background-color:red">YABOOBAY</div>');
 })();
