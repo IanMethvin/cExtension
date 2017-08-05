@@ -4,9 +4,15 @@ chrome.browserAction.onClicked.addListener(function(tab) {
   // chrome.tabs.executeScript({
   //   code: 'document.body.style.backgroundColor="red"'
   // });
-  	chrome.tabs.executeScript(tab.ib, {
-		file: 'slider.js'
-	});
-
+  
+  	 chrome.tabs.executeScript(null, {
+		 file: 'slider.js'
+		//code: "addSlider()";
+	 });
+	 
 
 });
+
+
+
+

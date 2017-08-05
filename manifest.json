@@ -4,13 +4,14 @@
   "manifest_version": 2,
 
   "name": "Test Extension",
-  "description": "This extension fucking sucks",
+  "description": "This extension kinda sucks",
   "version": "1.3",
 
 	"content_scripts": [
 	{
 	  "matches": ["<all_urls>"], //where your script should be injected
-	  "css": ["slider.css"] //the name of the file to be injected
+	  "css": ["slider.css"], //the name of the file to be injected
+	  "js": ["jQuery_3.2.1.min.js"]
 	}],
   "permissions": [
     "https://*/*",
@@ -18,7 +19,7 @@
     "tabs"
   ],
   "background": {
-    "scripts": ["jQuery_3.2.1.min.js","background.js"],
+    "scripts": ["background.js"],
     "persistent": false
   },  
   "browser_action": {
