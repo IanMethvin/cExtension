@@ -12,13 +12,13 @@
 	  "js": ["js/jQuery_3.2.1.min.js"]
 	}],
   "web_accessible_resources": [
-    "css/slider.css",
     "fonts/subwayFont.ttf"
   ],
   "permissions": [
     "https://*/*",
     "http://*/*",
-    "tabs"
+    "tabs",
+	"storage"
   ],
   "background": {
     "scripts": ["js/background.js"],
