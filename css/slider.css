@@ -13,6 +13,18 @@
 	z-index: 2147483647;
 }
 
+.stockUp {
+	display: inline-block;
+	color: green;
+	padding-right: 5em;
+}
+
+.stockDown {
+	display: inline-block;
+	color: red;
+	padding-right: 5em;
+}
+
 @font-face {
     font-family: subwayFont;
     src: url('chrome-extension://__MSG_@@extension_id__/fonts/subwayFont.ttf');
