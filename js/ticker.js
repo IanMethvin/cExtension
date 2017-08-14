@@ -22,8 +22,8 @@ function initTicker(symbols) {
 	$.get(yahooApiUrl, function( data ) {
 		data = data.spark.result;
 	  	for (i = 0; i < data.length; i++) {
-		  	var lastPrice = getLastPrice(data[i].response[0].indicators.quote[0].close);
-		  	var prevClose = data[i].response[0].meta.previousClose;
+		  	var lastPrice = (data[i].response[0].indicators.quote[0].close != undefined ? getLastPrice(data[i].response[0].indicators.quote[0].close) : 0);
+		  	var prevClose = (data[i].response[0].meta.previousClose != undefined ? data[i].response[0].meta.previousClose : 0);
 		  	var priceDiff = round((lastPrice - prevClose), 2);
 		  	var diffPercent = round((priceDiff/ prevClose)*100, 2);
 
