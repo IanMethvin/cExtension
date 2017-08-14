@@ -1,32 +1,44 @@
 chrome.browserAction.onClicked.addListener(function(tab) {
+    chrome.storage.local.remove('activeTickerTab');
 	chrome.tabs.executeScript(null, {
 	 	//code: ""
 		file: 'js/ticker.js'
-	});
+    });
+    
+    refreshSymbols(true);
 });
 
 chrome.runtime.onMessage.addListener(function(request) {
-    if (request.type === 'editStocks') {
-        chrome.tabs.create({
-            url: chrome.extension.getURL('customize.html'),
-            active: false
-        }, function(tab) {
-            // After the tab has been created, open a window to inject the tab
-            chrome.windows.create({
-                tabId: tab.id,
-                type: 'popup',
-                height: 250,
-                width: 500,
-                focused: true
-                // incognito, top, left, ...
+    switch (request.type) {
+        case ('editStocks'): {
+            chrome.tabs.create({
+                url: chrome.extension.getURL('customize.html'),
+                active: false
+            }, function(tab) {
+                // After the tab has been created, open a window to inject the tab
+                chrome.windows.create({
+                    tabId: tab.id,
+                    type: 'popup',
+                    height: 250,
+                    width: 500,
+                    focused: true
+                    // incognito, top, left, ...
+                });
             });
-        });
+
+            break;
+        }
+        default: 
+            break;
     }
 });
 
 
 function setDefaultSymbols() {
-	chrome.storage.local.set({'defaultSymbols': "amd,voo,msft"});
+    var ds = {'defaultSymbols': ['amd', 'msft', 'voo']};
+    
+    chrome.storage.local.set(ds);
+    return ds.defaultSymbols;
 }
 
 function addTicker(ticker) {
@@ -39,8 +51,10 @@ function addTicker(ticker) {
 	    	chrome.storage.local.set({'tickerList': tickerList});
 	    }
 
-	    chrome.runtime.sendMessage({type:'reinit', value: tickerList});//this one isnt working
-	    chrome.runtime.sendMessage({type:'tickerList', value: tickerList});
+        chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
+        var activeTickerTab = getActiveTickerTab(function (activeTickerTab) {
+            chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
+        });
     });
 }
 
@@ -50,26 +64,56 @@ function removeTicker(ticker) {
 
         var tickerIndex = parseInt(tickerList.indexOf(ticker));
         if (tickerIndex > -1) {
-	    	tickerList.splice(tickerIndex, 1);
+            tickerList.splice(tickerIndex, 1);
+                    
 	    	chrome.storage.local.set({'tickerList': tickerList});
+	   		chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
 
-	    	chrome.runtime.sendMessage({type:'reinit', value: tickerList});//this one isnt working
-	   		chrome.runtime.sendMessage({type:'tickerList', value: tickerList});
+            var activeTickerTab = getActiveTickerTab(function (activeTickerTab){
+                chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
+            });
 	    }
     });
 }
 
-function getSymbols() {
+function getActiveTickerTab(cf) {
+    chrome.storage.local.get('activeTickerTab', function(result) {
+        if (!result || !result.activeTickerTab) {
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs){ 
+                if (tabs.length > 0) {
+                    var activeTickerTab = tabs[0];
+                    chrome.storage.local.set({'activeTickerTab': activeTickerTab});
+
+                    cf(activeTickerTab);
+                }
+            });
+        }
+        else {
+            cf(result.activeTickerTab);
+        }
+    });
+}
+
+function refreshSymbols(updateContentScripts) {
 	var tickerList = "";
     chrome.storage.local.get('tickerList', function(result){
         tickerList = result.tickerList;
 
         if (!tickerList) {
 	    	chrome.storage.local.get('defaultSymbols', function(result){
-	        	tickerList = result.tickerList;
+                var defaultSymbolsList =  (result.defaultSymbols ? result.defaultSymbols : setDefaultSymbols());
+                tickerList = defaultSymbolsList;
+                            
+	    	    chrome.storage.local.set({'tickerList': tickerList});
 	    	});
 	    }
 
-	    chrome.runtime.sendMessage({type:'tickerList', value: tickerList});
+        chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
+
+        if (updateContentScripts) {
+            getActiveTickerTab(function (activeTickerTab){
+                chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
+            });
+        }
     });
 }

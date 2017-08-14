@@ -9,7 +9,7 @@
 	{
 	  "matches": ["<all_urls>"], //where your script should be injected
 	  "css": ["css/ticker.css"], //the name of the file to be injected
-	  "js": ["js/jQuery_3.2.1.min.js"]
+	  "js": ["libraries/jQuery_3.2.1.min.js", "libraries/underscore-min.js"]
 	}],
   "web_accessible_resources": [
     "fonts/subwayFont.ttf"

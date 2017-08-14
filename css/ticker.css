@@ -12,32 +12,6 @@
 	top: 0;
 	z-index: 2147483647;
 }
-#tickerMarquee {
-	width: calc(100% - 78px);
-	float: right;
-}
-
-.ticker a, .ticker a:visited {
-	color: goldenrod;
-	font-size: 0.8em;
-	font-family: subwayFont;
-}
-
-.ticker {
-	display: inline-block;
-}
-
-.stockUp {
-	display: inline-block;
-	color: #093;
-	padding-right: 3em;
-}
-
-.stockDown {
-	display: inline-block;
-	color: #ff333a;
-	padding-right: 3em;
-}
 
 @font-face {
     font-family: subwayFont;

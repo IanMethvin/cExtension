@@ -13,12 +13,10 @@ function getLastPrice (prices) {
 	return lastPrice;
 }
 
-$(document).on("click", "#editStocks", function() {
-	chrome.runtime.sendMessage({type:'editStocks'});
-});
+var sliderShadowRoot = undefined;
 
 function initTicker(symbols) {
-	var yahooApiUrl = "https://partner-query.finance.yahoo.com/v7/finance/spark?symbols=" + symbols + "&range=1d&interval=1m&indicators=close&includeTimestamps=false&includePrePost=false&corsDomain=finance.yahoo.com";
+	var yahooApiUrl = "https://partner-query.finance.yahoo.com/v7/finance/spark?symbols=" + symbols.join(',') + "&range=1d&interval=1m&indicators=close&includeTimestamps=false&includePrePost=false&corsDomain=finance.yahoo.com";
 	var dataString = "";
 	jQuery.ajaxSetup({async:false});
 	$.get(yahooApiUrl, function( data ) {
@@ -42,8 +40,27 @@ function initTicker(symbols) {
 	// if (document.elementFromPoint(0, 0).style.top == "" || document.elementFromPoint(0, 0).style.top == "0px")
 	// 	document.elementFromPoint(0, 0).style.top = "24px";
 	// else
+
+	var sliderHtml = '<div class="ticker" id="editStocks" style="display: inline-block;"><a href="#"" style="color: goldenrod; font-size: 0.8em; font-family: subwayFont">Customize</a></div>'
+	+ '<div id="tickerMarquee" style="width: 95%; float: right;"><marquee>' + dataString + '</marquee></div>';
+
+	if (sliderShadowRoot === undefined) {
 		$("body").children()[0].style.marginTop = "24px"
-	$("body").prepend('<div id="slider"><div class="ticker" id="editStocks"><a href="#"">Customize</a></div><div id="tickerMarquee"><marquee>' + dataString + '</marquee></div></div>');
+		var sliderParent = $('<div/>').attr('id', 'slider');
+		var shadowRoot = sliderParent[0].attachShadow({mode: 'open'});
+		shadowRoot.innerHTML = sliderHtml;
+		$("body").prepend(sliderParent);
+
+		sliderShadowRoot = shadowRoot;
+	}
+	else {
+		sliderShadowRoot.innerHTML = sliderHtml;
+	}
+
+	// Bind click event to shadow root element
+	$(sliderShadowRoot).find('#editStocks').on('click', function () {
+		chrome.runtime.sendMessage({type:'editStocks'});
+	});
 }
 
 function hideTicker() {
@@ -52,23 +69,17 @@ function hideTicker() {
 }
 
 //curerently not working
-chrome.runtime.onMessage.addListener(function(request) {
-    if (request.type === 'reinit') {
-    	var symbols = request.values;
-    	initTicker(symbols);
+chrome.runtime.onMessage.addListener(function(message) {
+    switch (message.type) {
+		case 'refreshTickerList': {
+        	var symbols = message.value;
+        	initTicker(symbols);
+		}
     }
 });
 
 (function() {
-//debugger;
-	if ($("#slider").length == 0) {
-		chrome.storage.local.get('tickerList', function(result){
-        	var symbols = result.tickerList;
-        	initTicker(symbols);
-    	});
-		
-	}
-	else {
+	if ($("#slider").length > 0) {
 		hideTicker()
 	}
 })();
