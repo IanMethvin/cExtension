@@ -29,10 +29,13 @@ function initTicker(symbols) {
 
 		  	dataString += "@" + data[i].symbol + ": ";
 		  	if (lastPrice > prevClose)
-		  		dataString += "<div class='stockUp' style='display:inline-block;color:green;padding-right: 5em;'> &#9650; " + lastPrice;
+		  		dataString += "<div class='stockUp' style='display:inline-block;color:green;padding-right: 3em;'> &#9650; " + lastPrice;
 		  	else
-		  		dataString += "<div class='stockDown' style='display:inline-block;color:red;padding-right: 5em;'> &#9660; " + lastPrice;
-		  	dataString +=  " (" + priceDiff + ", " + diffPercent + "%)</div>";
+		  		dataString += "<div class='stockDown' style='display:inline-block;color:red;padding-right: 3em;'> &#9660; " + lastPrice;
+		  	if (diffPercent == -100)
+		  		dataString +=  " (data error)</div>";
+		  	else
+		  		dataString +=  " (" + priceDiff + ", " + diffPercent + "%)</div>";
 	  	}
 	});
 
@@ -41,8 +44,8 @@ function initTicker(symbols) {
 	// 	document.elementFromPoint(0, 0).style.top = "24px";
 	// else
 
-	var sliderHtml = '<div class="ticker" id="editStocks" style="display: inline-block;"><a href="#"" style="color: goldenrod; font-size: 0.8em; font-family: subwayFont">Customize</a></div>'
-	+ '<div id="tickerMarquee" style="width: 95%; float: right;"><marquee>' + dataString + '</marquee></div>';
+	var sliderHtml = '<div class="ticker" id="editStocks" style="display: inline-block; height:24px;"><a href="#"" style="color: goldenrod; font-size: 0.8em; font-family: subwayFont">Customize</a></div>'
+	+ '<div id="tickerMarquee" style="width: calc(100% - 82px); float: right; height: 24px;"><marquee style="height:24px;">' + dataString + '</marquee></div>';
 
 	if (sliderShadowRoot === undefined) {
 		$("body").children()[0].style.marginTop = "24px"
@@ -65,22 +68,38 @@ function initTicker(symbols) {
 
 function hideTicker() {
 	$("#slider").remove();
-	$("body").children()[0].style.marginTop = "0px"
+	$("body").children()[0].style.marginTop = "0px";
+	sliderShadowRoot = undefined;
 }
 
 //curerently not working
 chrome.runtime.onMessage.addListener(function(message) {
     switch (message.type) {
 		case 'refreshTickerList': {
+			//THIS MESSAGE IS BEING RECEIVED ONCE FOR EVERY TIME THE BUTTON IS CLICKED
+			//first click 1 time, second click 2 times, etc..
+			
         	var symbols = message.value;
-        	initTicker(symbols);
+        	if ($("#slider").length == 0)
+        		initTicker(symbols);
+        	else
+        		hideTicker();
+
+			break;
 		}
+		case 'hideTicker': {
+			hideTicker();
+
+			break;
+		}
+		default:
+			break;
     }
 });
 
-(function() {
-	if ($("#slider").length > 0) {
-		hideTicker()
-	}
-})();
+// (function() {
+// 	if ($("#slider").length > 0) {
+// 		hideTicker()
+// 	}
+// })();
 

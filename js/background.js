@@ -33,12 +33,28 @@ chrome.runtime.onMessage.addListener(function(request) {
     }
 });
 
+function refreshSymbols(updateContentScripts) {
+	var tickerList = "";
+    chrome.storage.local.get('tickerList', function(result){
+        tickerList = result.tickerList;
 
-function setDefaultSymbols() {
-    var ds = {'defaultSymbols': ['amd', 'msft', 'voo']};
-    
-    chrome.storage.local.set(ds);
-    return ds.defaultSymbols;
+        if (!tickerList) {
+	    	chrome.storage.local.get('defaultSymbols', function(result){
+                var defaultSymbolsList =  (result.defaultSymbols ? result.defaultSymbols : setDefaultSymbols());
+                tickerList = defaultSymbolsList;
+                            
+	    	    chrome.storage.local.set({'tickerList': tickerList});
+	    	});
+	    }
+
+        //chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
+
+        if (updateContentScripts) {
+            getActiveTickerTab(function (activeTickerTab){
+                chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
+            });
+        }
+    });
 }
 
 function addTicker(ticker) {
@@ -46,15 +62,24 @@ function addTicker(ticker) {
         var tickerList = (!result.tickerList ? [] : result.tickerList);
 
         if (tickerList.indexOf(ticker) == -1) {
-	    	//tickerList = tickerList.length == 0 ? ticker : tickerList + "," + ticker;
-	    	tickerList.push(ticker);
-	    	chrome.storage.local.set({'tickerList': tickerList});
-	    }
 
-        chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
-        var activeTickerTab = getActiveTickerTab(function (activeTickerTab) {
-            chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
-        });
+        	var isValidTicker = validateTicker(ticker);
+		    if (isValidTicker) {
+		    	tickerList.push(ticker);
+    			chrome.storage.local.set({'tickerList': tickerList});
+		    }
+		    else
+		    {
+		    	alert ("Invalid ticker");
+		    	return;
+		    }
+			
+
+	        chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
+	        var activeTickerTab = getActiveTickerTab(function (activeTickerTab) {
+	            chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
+	        });
+	    }
     });
 }
 
@@ -94,26 +119,23 @@ function getActiveTickerTab(cf) {
     });
 }
 
-function refreshSymbols(updateContentScripts) {
-	var tickerList = "";
-    chrome.storage.local.get('tickerList', function(result){
-        tickerList = result.tickerList;
+function setDefaultSymbols() {
+    var ds = {'defaultSymbols': ['amd', 'msft', 'voo']};
+    
+    chrome.storage.local.set(ds);
+    return ds.defaultSymbols;
+}
 
-        if (!tickerList) {
-	    	chrome.storage.local.get('defaultSymbols', function(result){
-                var defaultSymbolsList =  (result.defaultSymbols ? result.defaultSymbols : setDefaultSymbols());
-                tickerList = defaultSymbolsList;
-                            
-	    	    chrome.storage.local.set({'tickerList': tickerList});
-	    	});
+function validateTicker(ticker) {
+	var valid = true;
+	var yahooApiUrl = "https://partner-query.finance.yahoo.com/v7/finance/spark?symbols=" + ticker + "&range=1d&interval=1m&indicators=close&includeTimestamps=false&includePrePost=false&corsDomain=finance.yahoo.com";
+	$.ajax({
+   		url: yahooApiUrl, 
+	    type: 'GET',
+	    async: false,
+	    error: function(XMLHttpRequest, textStatus, errorThrown) {
+	        valid = false;
 	    }
-
-        chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
-
-        if (updateContentScripts) {
-            getActiveTickerTab(function (activeTickerTab){
-                chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
-            });
-        }
-    });
+	});
+	return valid;
 }
