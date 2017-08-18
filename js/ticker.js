@@ -76,15 +76,15 @@ function hideTicker() {
 chrome.runtime.onMessage.addListener(function(message) {
     switch (message.type) {
 		case 'refreshTickerList': {
-			//THIS MESSAGE IS BEING RECEIVED ONCE FOR EVERY TIME THE BUTTON IS CLICKED
-			//first click 1 time, second click 2 times, etc..
-			
-        	var symbols = message.value;
-        	if ($("#slider").length == 0)
-        		initTicker(symbols);
-        	else
-        		hideTicker();
-
+			var isShown = $("#slider").length > 0;
+			chrome.storage.local.get('wait', function(result){
+				if (!isShown || message.refresh) {
+					var symbols = message.value;
+					initTicker(symbols);
+				}
+				else
+					hideTicker();
+			});
 			break;
 		}
 		case 'hideTicker': {

@@ -4,9 +4,9 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	 	//code: ""
 		file: 'js/ticker.js'
     });
-    
     refreshSymbols(true);
 });
+
 
 chrome.runtime.onMessage.addListener(function(request) {
     switch (request.type) {
@@ -25,7 +25,6 @@ chrome.runtime.onMessage.addListener(function(request) {
                     // incognito, top, left, ...
                 });
             });
-
             break;
         }
         default: 
@@ -64,21 +63,14 @@ function addTicker(ticker) {
         if (tickerList.indexOf(ticker) == -1) {
 
         	var isValidTicker = validateTicker(ticker);
-		    if (isValidTicker) {
-		    	tickerList.push(ticker);
-    			chrome.storage.local.set({'tickerList': tickerList});
-		    }
-		    else
-		    {
-		    	alert ("Invalid ticker");
+		    if (!isValidTicker) {
+                alert ("Invalid ticker");
 		    	return;
 		    }
 			
 
-	        chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
-	        var activeTickerTab = getActiveTickerTab(function (activeTickerTab) {
-	            chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
-	        });
+            tickerList.push(ticker);
+            updateTickerList(tickerList);
 	    }
     });
 }
@@ -86,18 +78,22 @@ function addTicker(ticker) {
 function removeTicker(ticker) {
     chrome.storage.local.get('tickerList', function(result){
         var tickerList = result.tickerList;
-
         var tickerIndex = parseInt(tickerList.indexOf(ticker));
-        if (tickerIndex > -1) {
-            tickerList.splice(tickerIndex, 1);
-                    
-	    	chrome.storage.local.set({'tickerList': tickerList});
-	   		chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
 
-            var activeTickerTab = getActiveTickerTab(function (activeTickerTab){
-                chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList});
-            });
+        if (tickerIndex > -1) {
+            tickerList.splice(tickerIndex, 1);               
+            updateTickerList(tickerList)
 	    }
+    });
+}
+
+function updateTickerList(tickerList) {
+    chrome.storage.local.set({'tickerList': tickerList});
+    //update tickerList in popup
+    chrome.runtime.sendMessage({type:'refreshTickerList', value: tickerList});
+    //update main ticker
+    var activeTickerTab = getActiveTickerTab(function (activeTickerTab) {
+        chrome.tabs.sendMessage(activeTickerTab.id, {type:'refreshTickerList', value: tickerList, refresh: true});
     });
 }
 
