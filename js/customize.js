@@ -1,49 +1,71 @@
-//debugger;
-var bgPage = {};
+(function (window) {
+    var bgPage = {};
 
-document.forms[0].onsubmit = function(e) {
-    e.preventDefault(); // Prevent submission
-    var ticker = $('#tickerToAdd').val();
-    var tickerList = bgPage.addTicker(ticker);
-    $('#tickerToAdd').val("");
-};
-
-function generateCurTickerHtml(tickers) {
-    var curTickers = "";
-    for (i = 0; i < tickers.length; i++) {
-        // curTickers += (i != 0 ? ", " : "") + "<a href='#' class='customTicker'>" + tickers[i] + "</a>";
-        curTickers += (i != 0 ? ", " : "") + tickers[i].toUpperCase() 
-            + "<div class='customTicker' id='" + tickers[i] + "' style='color:red;display:inline-block;cursor:pointer;'>[x]</div>";
-    }
-    return curTickers;
-}
-
-chrome.runtime.onMessage.addListener(function(request) {
-    if (request.type === 'refreshTickerList') {
-        var curTickers = generateCurTickerHtml(request.value);
-        $('#currentTickers').html(curTickers);
-    }
-});
-
-$('#tickerToAdd').on('input', _.debounce(function() {
-    $('#addTickerButton').prop('disabled', ($(this).val().trim() === '' ? true : false));
-}, 1));
-
-$(document).ready(function() {
-    chrome.runtime.getBackgroundPage(function(bgWindow) {
-        bgPage = bgWindow;
-
-        chrome.storage.local.get('tickerList', function(result){
-            var curTickers = generateCurTickerHtml(result.tickerList);
-            $('#currentTickers').html(curTickers);
+    // Creates ticker html based on provided list of tickers.
+    function generateTickerListHtml(tickers) {
+        var tickerHtml = "";
+        
+        // Iterate through each ticker
+        _.each(tickers, function (tickerSymbol, i) {
+            // Constructs html for each ticker symbol.
+            tickerHtml += (i != 0 ? ", " : "") + tickerSymbol.toUpperCase() 
+                + "<div class='customTicker' id='" + tickerSymbol + "' style='color:red;display:inline-block;cursor:pointer;'>[x]</div>";
         });
 
-        //why do this on load? symbols are already loaded?
-        //bgPage.refreshSymbols(false);
-    });
-})
+        $('#customizeCurrentTickers').html(tickerHtml);
 
-$(document).on("click", ".customTicker", function() {
-    var ticker = this.id;
-    bgPage.removeTicker(ticker);
-});
+        // Register click listener on individual tickers to trigger the remove action.
+        $('.customTicker').on('click', function () {
+            var ticker = this.id.toLowerCase();
+            bgPage.removeTicker(ticker);
+        });
+    }
+
+    // Initializes current page listeners and events.
+    function initializeCustomizePage () {
+
+        // Set background page variables for repeated use.
+        chrome.runtime.getBackgroundPage(function(bgWindow) {
+            bgPage = bgWindow;
+
+            // Retrieve current list of tickers.
+            bgPage.retrieveTickerList(false, function (tickerList) {
+                // Generate HTML for each ticker in the list.
+                generateTickerListHtml(tickerList);
+            });
+        });
+
+        // Register background message listener -- handles specific message events.
+        chrome.runtime.onMessage.addListener(function(request) {
+            if (request.type === 'refreshTickerList') {
+                // Refresh ticker display by re-generating the ticker html.
+                generateTickerListHtml(request.value);
+            }
+        });
+        
+        // Register input listener for handling user input.
+        $('#tickerToAdd').on('input', _.debounce(function() {
+            // Enable / Disable add ticker button based on current value of the input.
+            $('#addTickerButton').prop('disabled', ($(this).val().trim() === '' ? true : false));
+        }, 500));
+        
+        // Register submit listener on form element to trigger submission of a new ticker.
+        $('#customizeTickerForm').on('submit', function(e) {
+            // Prevent submission
+            e.preventDefault(); 
+
+            // Retrieve the new ticker value and add it to the main ticker list in local storage.
+            var tickerValue = $('#tickerToAdd').val().toLowerCase();
+            var tickerList = bgPage.addTicker(tickerValue);
+
+            // Clear ticker input field.
+            $('#tickerToAdd').val("");
+        });
+    }
+
+    // Initialize customize page when dom is ready.
+    $(document).ready(function() {
+        initializeCustomizePage();
+    });
+
+})(this);
